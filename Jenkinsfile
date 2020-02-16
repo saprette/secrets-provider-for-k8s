@@ -23,11 +23,11 @@ pipeline {
       }
     }
 
-    stage ("Run Integration Tests") {
+    stage ("Run Integration Tests on oss") {
       steps {
         script {
           def tasks = [:]
-          ["oss", "dap"].each { deployment ->
+          ["oss"].each { deployment ->
             tasks["Kubernetes GKE, ${deployment}"] = {
                 sh "./bin/test_integration --docker --${deployment} --gke"
             }
@@ -42,6 +42,26 @@ pipeline {
         }
       }
     }
+
+    stage ("Run Integration Tests on dap") {
+          steps {
+            script {
+              def tasks = [:]
+              ["dap"].each { deployment ->
+                tasks["Kubernetes GKE, ${deployment}"] = {
+                    sh "./bin/test_integration --docker --${deployment} --gke"
+                }
+                tasks["Openshift v3.11, ${deployment}"] = {
+                    sh "./bin/test_integration --docker --${deployment} --oc311"
+                }
+                tasks["Openshift v3.10, ${deployment}"] = {
+                    sh "./bin/test_integration --docker --${deployment} --oc310"
+                }
+              }
+              parallel tasks
+            }
+          }
+        }
 
     stage('Publish client Docker image') {
         steps {
